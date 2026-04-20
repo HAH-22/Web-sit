@@ -1,114 +1,66 @@
 <?php
 
-use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\CarController;
+use App\Models\Car;
 
-Route::get('/dashboard', function () {
-    return view('dashboard');
-})->middleware(['auth', 'verified'])->name('dashboard');
-
-Route::middleware('auth')->group(function () {
-    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
-    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
-    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
-});
-
-require __DIR__.'/auth.php';
-
+// Ruta principal: muestra todos los carros
 Route::get('/', function () {
-    return view('index');
-});
-
-// Ruta para el panel de administración (lista de usuarios)
-Route::get('/admin', [UserController::class, 'index'])->name('admin.index')->middleware('auth');
-
-// Rutas completas para la gestión de usuarios
-Route::resource('user', UserController::class);
-
-Route::get('/users', [UserController::class, 'index'])->name('users');
-
-Route::get('/', function () {
-    return view('index');
+    $cars = Car::all(); // Obtiene todos los carros
+    return view('index', compact('cars'));
 })->name('inicio');
 
+// Rutas públicas
 Route::get('/marca', function () {
-    return view('marca');
+    $marcas = Car::select('marca')->distinct()->get();
+    return view('marca', compact('marcas'));
 })->name('marca');
 
 Route::get('/contacto', function () {
     return view('contacto');
 })->name('contacto');
 
-Route::get('/car1', function () {
-    return view('car1');
-})->name('car1');
+// Rutas de autenticación (Breeze)
+require __DIR__.'/auth.php';
 
-Route::get('/car2', function () {
-    return view('car2');
-})->name('car2');
+// Panel de usuario autenticado
+Route::middleware('auth')->group(function () {
+    Route::get('/dashboard', function () {
+        return view('dashboard');
+    })->name('dashboard');
 
-Route::get('/car3', function () {
-    return view('car3');
-})->name('car3');
+    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+});
 
-Route::get('/car4', function () {
-    return view('car4');
-})->name('car4');
+// Rutas de administración (solo para usuarios con is_admin = true)
+Route::middleware(['auth', 'is_admin'])->group(function () {
+    Route::get('/admin', [UserController::class, 'index'])->name('admin.index');
+    Route::resource('user', UserController::class);
+    Route::get('/users', [UserController::class, 'index'])->name('users.index');
+    Route::resource('cars', CarController::class);
+});
 
-Route::get('/pago', function () {
-    return view('pago');
-})->name('pago');
+// Rutas públicas de carros (cualquier usuario puede ver la lista y los detalles)
+Route::get('/cars', [CarController::class, 'index'])->name('cars.index');
+Route::get('/cars/{car}', [CarController::class, 'show'])->name('cars.show');
 
-Route::get('/comex', function () {
-    return view('comex');
-})->name('comex');
+// Rutas de administración de carros (solo administradores)
+Route::middleware(['auth', 'is_admin'])->group(function () {
+    Route::get('/cars/create', [CarController::class, 'create'])->name('cars.create');
+    Route::post('/cars', [CarController::class, 'store'])->name('cars.store');
+    Route::get('/cars/{car}/edit', [CarController::class, 'edit'])->name('cars.edit');
+    Route::put('/cars/{car}', [CarController::class, 'update'])->name('cars.update');
+    Route::delete('/cars/{car}', [CarController::class, 'destroy'])->name('cars.destroy');
+});
 
-Route::get('/admin', function () {
-    return view('admin');
-})->name('admin');
-
-Route::get('/agregar', function () {
-    return view('agregar');
-})->name('agregar');
-
-Route::get('/quitar', function () {
-    return view('quitar');
-})->name('quitar');
-
-Route::get('/banear', function () {
-    return view('banear');
-})->name('banear');
-
-Route::get('/agrcar', function () {
-    return view('agrcar');
-})->name('agrcar');
-
-Route::get('/quitcar', function () {
-    return view('quitcar');
-})->name('quitcar');
-
-Route::get('/banus', function () {
-    return view('banus');
-})->name('banus');
-
-Route::get('/quitadmin', function () {
-    return view('quitadmin');
-})->name('quitadmin');
-
-Route::get('/agadmin', function () {
-    return view('agadmin');
-})->name('agadmin');
-
-Route::get('/qdmin', function () {
-    return view('qdmin');
-})->name('qdmin');
-
-// Ruta principal para el panel de administración (muestra la lista de usuarios)
-Route::get('/admin', [UserController::class, 'index'])->name('admin.index');
-
-// Rutas RESTful para la gestión de usuarios (crear, editar, eliminar, etc.)
-Route::resource('user', UserController::class);
-
-// Opcional: si quieres mantener /users, que también muestre la lista
-Route::get('/users', [UserController::class, 'index'])->name('users.index');
+// Rutas adicionales (si las necesitas, crea sus vistas)
+Route::get('/pago', function () { return view('pago'); })->name('pago');
+Route::get('/comex', function () { return view('comex'); })->name('comex');
+Route::get('/agregar', function () { return view('agregar'); })->name('agregar');
+Route::get('/quitar', function () { return view('quitar'); })->name('quitar');
+Route::get('/agrcar', function () { return view('agrcar'); })->name('agrcar');
+Route::get('/quitcar', function () { return view('quitcar'); })->name('quitcar');

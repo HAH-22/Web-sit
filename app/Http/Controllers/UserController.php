@@ -57,6 +57,10 @@ class UserController extends Controller
             $data['password'] = bcrypt($request->password);
         }
 
+        if ($request->has('is_admin')) {
+        $data['is_admin'] = $request->boolean('is_admin');
+        }
+
         $user->update($data);
 
         return redirect()->route('admin.index')->with('success', 'Usuario actualizado');
